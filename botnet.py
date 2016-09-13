@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import pxssh
+import platform
 
 class Client:
 
@@ -15,7 +16,7 @@ class Client:
             s.login(self.host, self.user, self.password)
             return s
         except Exception, e:
-            print # coding=utf-8
+            print e
             print "[-] Error Connecting"
 
     def send_command(self, cmd):
@@ -34,5 +35,7 @@ def addClient(host, user, password):
     botNet.append(client)
 
 botNet = []
+addClient('127.0.0.1', 'alexzoltowski', 'asldkf')
 
-addClient()
+#commands
+#sw_vers && uname -a for sys info
