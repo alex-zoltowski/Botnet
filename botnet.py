@@ -36,9 +36,9 @@ def addClient(host, user, password):
     botNet.append(client)
 
 botNet = []
-#sweeper = PySweeper.PySweeper("141.209")
+#sweeper = PySweeper.PySweeper()
 #ips = sweeper.subnet(144)
-ips = ["141.209.48.202", "141.209.50.119"]
+ips = []
 
 with open('/etc/pass') as f:
     credentials = [x.strip().split(':') for x in f.readlines()]
