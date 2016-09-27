@@ -3,12 +3,10 @@ import multiprocessing
 import subprocess
 import os
 import socket
-from argparse import ArgumentParser
 import sys
 
 class PySweeper:
-
-    #subnet = "111.111"
+    
     def __init__(self, network_ip):
         self.network_ip = network_ip
 
