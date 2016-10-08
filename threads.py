@@ -140,7 +140,6 @@ def main():
     botnet = Botnet("/etc/ips", "/etc/pass")
     botnet.connect()
     botnet.send_command("ls -la")
-    #botnet.send_file_or_folder("/Users/alexzoltowski/hi.txt", "/Users/sysop/")
     botnet.send_command("ls")
     botnet.print_output()
     botnet.disconnect()
