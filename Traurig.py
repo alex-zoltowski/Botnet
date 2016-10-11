@@ -3,6 +3,7 @@ import tkMessageBox as mbox
 import tkFileDialog
 import tkSimpleDialog
 import socket
+import datetime
 
 class Traurig(Frame):
 
@@ -55,77 +56,53 @@ class Traurig(Frame):
             self.onEnterCheckPort()
 
     def onFileCheckPort(self):
-        '''
-        file may look like:
-        ip
-        ip
-        ip
-        port
-        port
-
-        file may also look like:
-        port
-        port
-        port
-        port
-        ip
-        ip
-
-        file could even look like:
-        port
-        ip
-        port
-        ip
-        ip
-        ip
-        port
-
-        all will be accepted and accounted for by Traurig
-        the only requirement of the file is that each value is on
-        its own line
-
-        if the file has an invalid ip or port on one of the lines,
-        then Traurig will ignore that line, making note of it so
-        that it can display the error on the line with the results.
+        #mbox.showinfo('Still Being Implemented', 'This feature is still being implemented and will be a part of Traurig soon!')
+        userfile = tkFileDialog.askopenfilename()
+        if userfile != None:
+            chosen_file = open(userfile, 'r')
+            iplist = []
+            portlist = []
+            errorlist = []
+            current_value = 1
+            open_value = ''
+            results = ['RESULTS:']
 
 
-        Traurig output formatting: (displayed in a window with an option to save as .txt file for use later)
+            for line in chosen_file.readlines():
+                if line.endswith('\n'):
+                    true_line = line[:-1]
+                if check_if_ip(true_line):
+                    iplist.append(true_line)
+                elif check_if_port(true_line):
+                    portlist.append(true_line)
+                else:
+                    errorlist.append((true_line, current_value))
+                current_value += 1
 
-        ***********************************
-        RESULTS:
-        ***********************************
-        <ip address 1 here>:
-            <port 1 here> = Open
-            <port 2 here> = Not Open
-            <port 3 here> = Not Open
-            etc....
-        <ip address 2 here>:
-            <port 1 here> = Not Open
-            <port 2 here> = Open
-            <port 3 here> = Not Open
-        etc...
+            for ipval in iplist:
+                results.append(("\n{0}".format(ipval.strip('\n'))))
+                for portval in portlist:
+                    if is_port_open(ipval, portval):
+                        open_value = 'open'
+                    elif is_port_open(ipval, portval) == False:
+                        open_value = 'not open'
+                    results.append('\nPort ' + str(portval).strip('\n') + ' ' + open_value)
+            results.append('\nERRORS:')
 
-        ***********************************
-        ERRORS:
-        ***********************************
-        <errored port here> on line <line number from orig. file here> = Inavlid Port
-        <errored ip here> on line <line number from orig. file here> = Invalid IP Address
-        etc...
+            for error in errorlist:
+                thing_to_append = ('Line ' + str(error[1]).strip('\n') + ': \'' + str(error[0]).strip('\n') + '\' is not a valid IP or Port')
+                results.append('\n' + thing_to_append)
 
-        '''
+            results_string = ''
+            for x in results:
+                results_string += x
 
-        '''
-        First, we should prompt for the user to pick a file
-        after that, we should check if each line in the folder is either an ip or a port
-        if the line is an ip, add it to the ip list
-        if the line is a port, add it to the port list
-        if the line is an invalid ip or an invalid port or just plain wrong, add it to error list as a tuple with (linenum, error)
-        3 possible errors:
-            1) proper ip format but incorrect values (i.e. 444.444.444.441 is not a valid ip)
-            2) proper port format but incorrect value (i.e. -123 or 123456789)
-            3) improper ip format/port format (i.e. lolimwreckingthecoders was entered, and could not be determined to be a port or an ip)
-        '''
-        mbox.showinfo('Still Being Implemented', 'This feature is still being implemented and will be a part of Traurig soon!')
+            #mbox.showinfo('Results', results_string)
+            current_time = datetime.datetime.now().time()
+            filename = 'results_from_' + str(current_time) + '.txt'
+            results_file = open(filename, 'w')
+            results_file.write(results_string)
+            mbox.showinfo('Results Saved', filename + ' has been created in the same directory as Taurig.')
 
 
     def onEnterCheckPort(self):
@@ -136,8 +113,7 @@ class Traurig(Frame):
             pass
         else:
             #if they enter a value, check if it is an ip, and then
-            is_ip = check_if_ip(ip_entered)
-            if is_ip:
+            if check_if_ip(ip_entered):
                 #prompt for port to scan on
                 port_entered = tkSimpleDialog.askstring('Enter Port To Check', 'Enter the port you would like to check: ')
                 if port_entered == None:
@@ -166,18 +142,22 @@ class Traurig(Frame):
 
 def is_port_open(ip, port): #takes in ip as a string, port as string or int
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    if s.connect_ex((ip, int(port))) == 0:
+    result = s.connect_ex((ip, int(port)))
+    if result == 0:
         return True
     else:
         return False
 
-
 def check_if_ip(ip):
-    try:
-        socket.inet_aton(ip)
-    except socket.error:
+    split_ip = ip.split('.')
+    if len(split_ip) == 4:
+        try:
+            socket.inet_aton(ip)
+        except socket.error:
+            return False
+        return True
+    else:
         return False
-    return True
 
 
 def check_if_port(entered_port):
