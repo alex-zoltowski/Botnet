@@ -48,6 +48,7 @@ class Client:
 class Botnet:
     def __init__(self, ips, credentials):
         self.clients = []
+        self.unconnected_hosts = []
         with open(ips) as f:
             self.ips = [x.strip() for x in f.readlines()]
         with open(credentials) as f:
@@ -60,6 +61,7 @@ class Botnet:
                 client = Client(ip, user, password)
             except:
                 client = None
+                print "hi"
             finally:
                 if client.session is not None:
                     clients.append(client)
@@ -84,11 +86,11 @@ class Botnet:
             client.session.sendline("echo $HOSTNAME")
             client.session.prompt()
             split_output = client.session.before.split("\n")
-            client.set_version(split_output[1])
+            client.set_hostname(split_output[1])
             client.session.sendline("sw_vers -productVersion")
             client.session.prompt()
             split_output = client.session.before.split("\n")
-            client.set_hostname(split_output[1])
+            client.set_version(split_output[1])
 
     def send_command(self, command, clients):
         for client in clients:
@@ -140,7 +142,6 @@ def main():
     botnet = Botnet("/etc/ips", "/etc/pass")
     botnet.connect()
     botnet.send_command("ls -la")
-    botnet.send_command("ls")
     botnet.print_output()
     botnet.disconnect()
 
