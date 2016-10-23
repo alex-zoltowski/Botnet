@@ -45,6 +45,7 @@ class Client:
     def store_command_data(self, command, output):
         self.commands.append(Command(command, output))
 
+
 class Botnet:
     def __init__(self, ips, credentials):
         self.clients = []
@@ -141,6 +142,7 @@ def main():
 
     botnet = Botnet("/etc/ips", "/etc/pass")
     botnet.connect()
+
     botnet.send_command("ls -la")
     botnet.print_output()
     botnet.disconnect()
