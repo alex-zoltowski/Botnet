@@ -101,7 +101,7 @@ class Botnet:
 
     def send_command(self, command):
         for client in self.clients:
-            print("sent cmd")
+            #print("sent cmd")
             client.session.sendline(command)
             client.session.prompt()
             split_output = client.session.before.split("\n")
@@ -110,7 +110,7 @@ class Botnet:
             for line in split_output:
                 output += line + "\n"
             client.store_command_data(command, output)
-            print("stored output")
+            #print("stored output")
 
     def send_file_or_folder(self, file_or_folder, to_location):
         for client in self.clients:
@@ -141,9 +141,9 @@ def main():
 
     botnet = Botnet("/etc/ips", "/etc/pass")
     botnet.connect()
-    botnet.go_sudo()
+    #botnet.go_sudo()
     botnet.send_command("ls -la")
-    print("cmd sent")
+    #print("cmd sent")
     botnet.print_output()
     #botnet.disconnect()
 

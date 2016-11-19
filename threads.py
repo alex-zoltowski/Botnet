@@ -83,15 +83,17 @@ class Botnet:
 
         threads = None
 
-        for client in self.clients:
-            client.session.sendline("echo $HOSTNAME")
-            client.session.prompt()
-            split_output = client.session.before.split("\n")
-            client.set_hostname(split_output[1])
-            client.session.sendline("sw_vers -productVersion")
-            client.session.prompt()
-            split_output = client.session.before.split("\n")
-            client.set_version(split_output[1])
+        # grabs version and hostname
+        # @return Client.client, Client.version
+        # for client in self.clients:
+        #     client.session.sendline("echo $HOSTNAME")
+        #     client.session.prompt()
+        #     split_output = client.session.before.split("\n")
+        #     client.set_hostname(split_output[1])
+        #     client.session.sendline("sw_vers -productVersion")
+        #     client.session.prompt()
+        #     split_output = client.session.before.split("\n")
+        #     client.set_version(split_output[1])
 
     def send_command(self, command, clients):
         for client in clients:
@@ -144,6 +146,7 @@ def main():
     botnet.connect()
 
     botnet.send_command("ls -la")
+    botnet.send_command("")
     botnet.print_output()
     botnet.disconnect()
 

@@ -169,8 +169,6 @@ class Traurig(Frame):
 
 
 
-
-
 def is_port_open(ip, port): #takes in ip as a string, port as string or int
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     if s.connect_ex((ip, int(port))) == 0:
